@@ -17,6 +17,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useParams } from "react-router-dom";
 import Spinner from "../components/Spinner";
 import moment from "moment";
+import dayjs from "dayjs";
 
 import { fetchCar } from "../features/car/carSlice";
 import { useBookCarMutation } from "../slices/bookingApiSlice";
@@ -32,7 +33,7 @@ function BookingCar() {
   const dispatch = useDispatch();
   const [from, setFrom] = useState();
   const [to, setTo] = useState();
-  const [totalMins, setTotalmins] = useState(0);
+  const [totalHours, setTotalHours] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
  
 
@@ -41,16 +42,19 @@ function BookingCar() {
   }, [dispatch, carId]);
 
   useEffect(() => {
-    setTotalAmount(totalMins * (car.rentPerHour / 60));
-  }, [totalMins, car.rentPerHour]);
+    setTotalAmount(totalHours * (car.rentPerHour));
+  }, [totalHours, car.rentPerHour]);
 
   function selectTimeSlots(values) {
     if (values) {
-      setFrom(moment(values[0]).format("MMM DD yyyy HH"));
-      setTo(moment(values[1]).format("MMM DD yyyy HH"));
-      setTotalmins(values[1].diff(values[0], "minutes"));
+      setFrom(dayjs(values[0]).format("MMM DD YYYY HH"));
+      setTo(dayjs(values[1]).format("MMM DD YYYY HH"));
+      setTotalHours(values[1].diff(values[0], "hour"));
+      console.log(dayjs(values[0]).format("MMM DD YYYY HH"), dayjs(values[1]).format("MMM DD YYYY HH"))
+      
+  
     } else {
-      setTotalmins(0);
+      setTotalHours(0);
     }
   }
   
@@ -59,7 +63,7 @@ function BookingCar() {
       token,
       user: JSON.parse(localStorage.getItem("userInfo"))._id,
       car: carId,
-      totalMins,
+      totalHours,
       totalAmount,
       bookedTimeSlots: {
         from,
@@ -67,6 +71,8 @@ function BookingCar() {
       },
     };
     bookCar(reqObj);
+    console.log(reqObj)
+    
   }
 
   return (
@@ -101,12 +107,12 @@ function BookingCar() {
               <h4>SELECT TIME SLOTS</h4>
             </Divider>
             <div>
-              <RangePicker
+              
+               <RangePicker
                 className="RangePicker"
-                showTime={{ format: "HH:mm a" }}
-                format="MMM DD YYYY HH:mm"
+                showTime={{ format: "HH a" }}
+                format="MMM DD YYYY HH"
                 onChange={selectTimeSlots}
-                
                 disabledDate={current => {
                   return current && current < moment().add(-1, "days");
                 }}
@@ -115,8 +121,8 @@ function BookingCar() {
               
               {from && to && (
                 <div className="mt-3">
-                  <p>Total Minutes : <b>{totalMins}</b></p>
-                  <h5 className="mb-4">Total Amount : {totalAmount}</h5>
+                  <p>Total Hours : <b>{totalHours}</b></p>
+                  <h5 className="mb-4">Total Amount : £ {totalAmount}</h5>
                   <StripeCheckout
                     token={onToken}
                     shippingAddress
